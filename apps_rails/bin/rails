@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby.exe
+APP_PATH = File.expand_path("../config/application", __dir__)
+require_relative "../config/boot"
+require "rails/commands"
+secret_key_base="89677027ab44701f25b417d44a3921f0d01ac2bd2c4ca47913bd349c6ace4c082bd160fa11f38341a8681d784d31955c62fb5d28a1c350ac29633030bdb92c33"

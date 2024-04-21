@@ -1,0 +1,95 @@
+version: "3.9"
+
+services:
+  mysql:
+    container_name: MySQL
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/usr/share/mysql/data
+    restart: unless-stopped
+
+  redis:
+    container_name: Redis
+    image: redis/redis-stack
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    volumes:
+      - redis_data:/usr/share/redis/data
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: RabbitMQ
+    volumes:
+      - rabbit_data:/usr/share/rabbit/data
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: unless-stopped
+
+  elastic:
+    container_name: ElasticSearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.2
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+  app_service:
+    container_name: AppService
+    image: eyadzz/apps_service_rails
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "3333:3000"
+    depends_on:
+      - "mysql"
+      - "redis"
+      - "rabbitmq"
+    links:
+      - "mysql"
+      - "redis"
+      - "rabbitmq"
+    restart: unless-stopped
+
+  chat_service:
+    container_name: ChatService
+    image: eyadzz/chat_service_go
+    ports:
+      - "6666:6666"
+    environment:
+      - PORT=6666
+      - DB_HOST=mysql
+      - DB_USER=root
+      - DB_PASS=123456
+      - DB_NAME=chatsDB
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - ELASTICSEARCH_URL=http://elastic:9200
+    depends_on:
+      - "mysql"
+      - "redis"
+      - "rabbitmq"
+      - "elastic"
+    links:
+      - "mysql"
+      - "redis"
+      - "rabbitmq"
+      - "elastic"
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  rabbit_data:
+  mysql_data:
+  elastic_data:
